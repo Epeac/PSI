@@ -1,0 +1,10 @@
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\bin\Debug\ImageViewerPSI.exe.config
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\bin\Debug\ImageViewerPSI.exe
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\bin\Debug\ImageViewerPSI.pdb
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.csprojAssemblyReference.cache
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.Form1.resources
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.Properties.Resources.resources
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.csproj.GenerateResource.cache
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.csproj.CoreCompileInputs.cache
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.exe
+C:\Users\rapha\Documents\ESILV A2\S2\PSI\ImageViewerPSI\obj\Debug\ImageViewerPSI.pdb
