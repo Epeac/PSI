@@ -80,13 +80,18 @@ namespace ImageViewerPSI
             Console.ReadLine();
         }
 
-        static void NoirEtBlanc(byte[] image)
+        public static void NoirEtBlanc(MyImage image)
         {
             int a = 0;
-            for (int i = 54; i < image.Length - 3; i += 3)
+            for (int i = 0; i < image.Im.GetLength(0); i++)
             {
-                a = (image[i] + image[i + 1] + image[i + 2]) / 3;
-                image[i] = Convert.ToByte(a); image[i + 1] = Convert.ToByte(a); image[i + 2] = Convert.ToByte(a);
+                for (int j = 0; j < image.Im.GetLength(1); j++)
+                {
+                    a = (image.Im[i,j].R + image.Im[i, j].G + image.Im[i, j].B) / 3;
+                    image.Im[i, j].R = Convert.ToByte(a);
+                    image.Im[i, j].G = Convert.ToByte(a);
+                    image.Im[i, j].B = Convert.ToByte(a);
+                }
             }
         }
 
@@ -234,6 +239,19 @@ namespace ImageViewerPSI
         {
             int[,] kernel = new int[,] { { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } };
             Pixel[,] passage = Convolution(kernel, image, 9);
+            for (int i = 0; i < passage.GetLength(0); i++)
+            {
+                for (int j = 0; j < passage.GetLength(1); j++)
+                {
+                    image.Im[i, j] = passage[i, j];
+                }
+            }
+        }
+
+        public static void Repoussage(MyImage image)
+        {
+            int[,] kernel = new int[,] { { -2, -1, 0 }, { -1, 1, 1 }, { 0, 1, 2 } };
+            Pixel[,] passage = Convolution(kernel, image, 1);
             for (int i = 0; i < passage.GetLength(0); i++)
             {
                 for (int j = 0; j < passage.GetLength(1); j++)
@@ -550,6 +568,307 @@ namespace ImageViewerPSI
                 }
             }
             return imcachee;
+        }
+
+        //QR CODe
+
+        public static List<char> Tabledeconv()
+        {
+            List<char> table = new List<char>();
+            for (int i = 0; i < 10; i++)
+            {
+                table.Add(Convert.ToChar(Convert.ToString(i)));
+            }
+            for (int i = 65; i <= 90; i++)
+            {
+                table.Add(Convert.ToChar(i));
+            }
+            table.Add(' ');
+            table.Add('$');
+            table.Add('%');
+            table.Add('*');
+            table.Add('+');
+            table.Add('-');
+            table.Add('.');
+            table.Add('/');
+            table.Add(':');
+            return table;
+        }
+
+        public static List<string> Encode(string phrase)
+        {
+            List<string> rep = new List<string>();
+            int n = 2;
+            List<char> table = Tabledeconv();
+            rep.Add("0010");
+            rep.Add(Convert.ToString(phrase.Length, 2));
+            while (rep[1].Length < 9)
+            {
+                rep[1] = "0" + rep[1];
+            }
+            for (int i = 0; i < phrase.Length; i += 2)
+            {
+                if (i < (phrase.Length - 1))
+                {
+                    int temps = table.IndexOf(phrase[i]) * 45 + table.IndexOf(phrase[i + 1]);
+                    rep.Add(Convert.ToString(temps, 2));
+                    while (rep[n].Length < 11)
+                    {
+                        rep[n] = "0" + rep[n];
+                    }
+                }
+                else
+                {
+                    int temps = table.IndexOf(phrase[i]);
+                    rep.Add(Convert.ToString(temps, 2));
+                    while (rep[n].Length < 6)
+                    {
+                        rep[n] = "0" + rep[n];
+                    }
+                }
+                n++;
+            }
+            return rep;
+        }
+
+        public static string Correction(List<string> donnée, int version)
+        {
+            version *= 8;
+            string chainecoorecte = "";
+            int longueur = 0;
+            for (int i = 0; i < donnée.Count; i++)
+            {
+                longueur += donnée[i].Length;
+            }
+            if (longueur < version)
+            {
+                if (longueur <= version)
+                {
+                    donnée[donnée.Count - 1] += "0000";
+                    longueur += 4;
+                }
+                else
+                {
+                    while (longueur < version)
+                    {
+                        donnée[donnée.Count - 1] += "0";
+                        longueur++;
+                    }
+                }
+                int temps = longueur / 8;
+                while (longueur - 8 * temps != 0)
+                {
+                    longueur++;
+                    temps = longueur / 8;
+                    donnée[donnée.Count - 1] += "0";
+                }
+                bool alterne = false;
+                while (longueur < version)
+                {
+                    if (alterne == false)
+                    {
+                        donnée.Add("11101100");
+                        alterne = true;
+                    }
+                    else
+                    {
+                        donnée.Add("00010001");
+                        alterne = false;
+                    }
+                    longueur += 8;
+                }
+            }
+            for (int i = 0; i < donnée.Count; i++)
+            {
+                chainecoorecte += donnée[i];
+            }
+            return chainecoorecte;
+        }
+
+        public static Pixel[,] QRcodeV1(int version)
+        {
+            if (version == 19) version = 0;
+            else version = 4;
+            Pixel[,] img = new Pixel[21 + version, 21 + version];
+            int bel = img.GetLength(0);
+            Pixel noir = new Pixel(0, 0, 0);
+            Pixel blanc = new Pixel(255, 255, 255);
+            bool alterne1 = true;
+            bool alterne2 = true;
+            string mask = "111011111000100";
+            int indexmask1 = 0;
+            int indexmask2 = 0;
+            for (int i = 0; i < img.GetLength(0); i++)
+            {
+                for (int j = 0; j < img.GetLength(1); j++)
+                {
+                    if ((j < 7 && (i == 0 || i == 6 || i == 20 + version || i == 14 + version))
+                         || (j >= 14 + version && (i == 20 + version || i == 14 + version))
+                         || (i < 7 && (j == 0 || j == 6))
+                         || (i >= 14 + version && (j == 20 + version || j == 0 || j == 6 || j == 14 + version))
+                         || ((j >= 2 && j <= 4) && ((i >= 2 && i <= 4) || (i >= 16 + version && i <= 18 + version)))
+                         || ((j >= 16 + version && j <= 18 + version) && (i >= 16 + version && i <= 18 + version)))
+                    {
+                        img[i, j] = noir;
+                    }
+                    if ((j == 7 && (i <= 7 || i >= 13 + version))
+                         || (j <= 7 && (i == 13 + version || i == 7))
+                         || (j == 13 + version && i >= 13 + version)
+                         || (j >= 13 + version && i == 13 + version)
+                         || ((j >= 1 && j <= 5) && (i == 1 || i == 5 || i == 15 + version || i == 19 + version))
+                         || ((j == 1 || j == 5) && ((i >= 15 + version && i <= 19 + version) || (i >= 1 && i <= 5)))
+                         || ((j == 15 + version || j == 19 + version) && (i >= 15 + version && i <= 19 + version))
+                         || ((j >= 15 + version && j <= 19 + version) && (i == 15 + version || i == 19 + version)))
+                    {
+                        img[i, j] = blanc;
+                    }
+                    if (j == 6 && (i >= 8 && i <= 12 + version))
+                    {
+                        if (alterne1 == true)
+                        {
+                            img[i, j] = noir;
+                            alterne1 = false;
+                        }
+                        else
+                        {
+                            img[i, j] = blanc;
+                            alterne1 = true;
+                        }
+                    }
+                    if (i == 14 + version && (j >= 8 && j <= 12 + version))
+                    {
+                        if (alterne2 == true)
+                        {
+                            img[i, j] = noir;
+                            alterne2 = false;
+                        }
+                        else
+                        {
+                            img[i, j] = blanc;
+                            alterne2 = true;
+                        }
+                    }
+                    if ((i == 12 + version && (j <= 8 && j != 6))
+                         || (j == 8 && (i > 12 + version && i != 14 + version)))
+                    {
+                        if (mask[indexmask1] == '1') img[i, j] = noir;
+                        else img[i, j] = blanc;
+                        indexmask1++;
+                    }
+                    if ((j == 8 && i < 7) || (i == 12 + version && j >= 13 + version))
+                    {
+                        if (mask[indexmask2] == '1') img[i, j] = noir;
+                        else img[i, j] = blanc;
+                        indexmask2++;
+                    }
+                    if (i == 7 && j == 8) img[i, j] = noir;
+                    if (version == 4)
+                    {
+                        if (((i == 4 || i == 8) && (j >= 16 && j <= 20))
+                            || ((j == 16 || j == 20) && (i >= 4 && i <= 8))
+                            || (i == 6 && j == 18))
+                        {
+                            img[i, j] = noir;
+                        }
+                        if (((j == 17 || j == 19) && (i >= 5 && i <= 7))
+                            || ((i == 5 || i == 7) && (j >= 17 && j <= 19)))
+                        {
+                            img[i, j] = blanc;
+                        }
+                    }
+
+                }
+            }
+            return img;
+        }
+
+        public static void RemplirQrcod(Pixel[,] im, string chaine)
+        {
+            Pixel noir = new Pixel(0, 0, 0);
+            Pixel blanc = new Pixel(255, 255, 255);
+            int indexchaine = 0;
+            bool alterne = false;
+            for (int j = im.GetLength(1) - 1; j > 0; j -= 2)
+            {
+                if (j == 6) j--;
+                for (int i = 0; i < im.GetLength(0); i++)
+                {
+
+                    int ligne;
+                    if (alterne == true) ligne = im.GetLength(0) - 1 - i;
+                    else ligne = i;
+
+
+                    if (im[ligne, j] == null)
+                    {
+
+
+
+                        if (chaine[indexchaine] == '1')
+                        {
+                            if (Masque0(j, ligne, im.GetLength(0) - 1) == true) im[ligne, j] = noir;
+                            else im[ligne, j] = blanc;
+                        }
+                        else
+                        {
+                            if (Masque0(j, ligne, im.GetLength(0) - 1) == true) im[ligne, j] = blanc;
+                            else im[ligne, j] = noir;
+                        }
+                        indexchaine++;
+
+                    }
+
+                    if (im[ligne, j - 1] == null)
+                    {
+                        if (indexchaine >= chaine.Length)
+                        {
+                            im[ligne, j - 1] = new Pixel(0, 0, 255);
+                            im[ligne, j] = new Pixel(255, 0, 0);
+                        }
+                        else
+                        {
+                            if (chaine[indexchaine] == '1')
+                            {
+                                if (Masque0(j - 1, ligne, im.GetLength(0) - 1) == true) im[ligne, j - 1] = noir;
+                                else im[ligne, j - 1] = blanc;
+                            }
+                            else
+                            {
+                                if (Masque0(j - 1, ligne, im.GetLength(0) - 1) == true) im[ligne, j - 1] = blanc;
+                                else im[ligne, j - 1] = noir;
+                            }
+                            indexchaine++;
+                        }
+                    }
+                }
+                if (alterne == true) alterne = false;
+                else alterne = true;
+            }
+        }
+
+        public static bool Masque0(int colonne, int ligne, int côté)
+        {
+            int verif = (côté - ligne) + (côté - colonne);
+            while (verif >= 2)
+            {
+                verif -= 2;
+            }
+            return verif != 0;
+        }
+
+        public static Pixel[,] Contour(Pixel[,] im)
+        {
+            Pixel[,] rep = new Pixel[im.GetLength(0) + 8, im.GetLength(1) + 8];
+            for (int i = 0; i < rep.GetLength(0); i++)
+            {
+                for (int j = 0; j < rep.GetLength(1); j++)
+                {
+                    if (i < 4 || i > (im.GetLength(0) + 3) || j < 4 || j > (im.GetLength(1) + 3)) rep[i, j] = new Pixel(255, 255, 255);
+                    else rep[i, j] = im[i - 4, j - 4];
+
+                }
+            }
+            return rep;
         }
 
         /// <summary>

@@ -19,8 +19,6 @@ namespace ImageViewerPSI
             this.b = b;
         }
 
-
-
         public void Reset()
         {
             r = 0;

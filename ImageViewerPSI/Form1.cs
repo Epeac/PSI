@@ -26,6 +26,7 @@ namespace ImageViewerPSI
             pictureBox1.Image = Image.FromFile("./ImagesLecture/idle.bmp");
             toolTip1.SetToolTip(button7, "Fractale de Mandelbrot");
             toolTip2.SetToolTip(comboBox2, "L'image doit être de la même taille ou plus petite que l'image ouverte");
+            toolTip3.SetToolTip(textBox1, "Le texte doit faire 45 caractères MAX");
         }
 
         private void cocoToolStripMenuItem_Click(object sender, EventArgs e) //Ouvrir coco
@@ -73,6 +74,13 @@ namespace ImageViewerPSI
             Application.Exit();
         }
 
+        private void button10_Click(object sender, EventArgs e) //Noir et Blanc
+        {
+            Program.NoirEtBlanc(image);
+            nomImage += "NetB";
+            image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
+            pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
+        }
         private void button1_Click(object sender, EventArgs e) //Miroir
         {
             Program.Miroir(image);
@@ -90,7 +98,7 @@ namespace ImageViewerPSI
         private void button3_Click(object sender, EventArgs e) //RenforceBord
         {
             Program.Renforcebord(image);
-            nomImage += "Renforcebord";
+            nomImage += "Renfbord";
             image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
             pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
         }
@@ -98,6 +106,13 @@ namespace ImageViewerPSI
         {
             Program.Flou(image);
             nomImage += "Flou";
+            image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
+            pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
+        }
+        private void button11_Click(object sender, EventArgs e) //Repoussage
+        {
+            Program.Repoussage(image);
+            nomImage += "Repoussage";
             image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
             pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
         }
@@ -226,8 +241,73 @@ namespace ImageViewerPSI
                     testaToolStripMenuItem_Click(sender, e);
                     break;
             }
+            nomImage += "R";
         }
 
+        private void button9_Click(object sender, EventArgs e) //Generer QR code
+        {
+            if(textBox1.Text != null && textBox1.Text != "")
+            {
+                string phrase = textBox1.Text;
+                phrase = phrase.ToUpper();
+                List<string> donnée = Program.Encode(phrase);
+                int version;
+                int eccCount;
+                if (phrase.Length <= 25)
+                {
+                    version = 19;
+                    eccCount = 7;
+                }
+                else
+                {
+                    version = 34;
+                    eccCount = 10;
+                }
+                string chaine = Program.Correction(donnée, version);
+
+                List<string> don = new List<string>();
+                string passage = "";
+                for (int i = 0; i < chaine.Length; i++)
+                {
+                    passage += chaine[i];
+                    int j = (i + 1) / 8;
+                    if (i + 1 - j * 8 == 0)
+                    {
+                        don.Add(passage);
+                        passage = "";
+                    }
+                }
+                byte[] reed = new byte[don.Count];
+                for (int i = 0; i < don.Count; i++)
+                {
+                    reed[i] = Convert.ToByte(don[i], 2);
+                }
+                byte[] result = ReedSolomonAlgorithm.Encode(reed, eccCount, ErrorCorrectionCodeType.QRCode);
+                don = new List<string>();
+                foreach (byte val in result)
+                {
+                    don.Add(Convert.ToString(val, 2));
+                    while (don[don.Count - 1].Length < 8)
+                    {
+                        don[don.Count - 1] = "0" + don[don.Count - 1];
+                    }
+                }
+                foreach (string val in don) chaine += val;
+                if (eccCount != 7) chaine += "0000000";
+                MyImage test = new MyImage("./ImagesLecture/coco.bmp");
+                test.Im = Program.QRcodeV1(version);
+                Program.RemplirQrcod(test.Im, chaine);
+                test.Im = Program.Contour(test.Im);
+                test.ChangerTailleImage(true);
+                Program.Agrandir(test, 40);
+                Program.Retrecir(test, 2);
+                nomImage += "QRCode"; 
+                test.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
+                image = new MyImage("./ImagesSortie/" + nomImage + ".bmp");
+                pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
+            }
+        }
+        
         private void Form1_Load(object sender, EventArgs e)
         {
 
@@ -269,24 +349,23 @@ namespace ImageViewerPSI
         }
         private void treeView2_AfterSelect(object sender, TreeViewEventArgs e) //Rotation (non fonctionnel)
         {
-            if (0 > rotation)
-            {
-                image.Rotate45();
-                nomImage += "Rotation";
-                image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
-                pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
-            }
-            else
-            {
-                image.Rotate180();
-                image.Rotate90();
-                image.Rotate45();
-                nomImage += "Rotation";
-                image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
-                pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
-            }
+            //if (0 > rotation)
+            //{
+            //    image.Rotate45();
+            //    nomImage += "Rotation";
+            //    image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
+            //    pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
+            //}
+            //else
+            //{
+            //    image.Rotate180();
+            //    image.Rotate90();
+            //    image.Rotate45();
+            //    nomImage += "Rotation";
+            //    image.FromImagetoFile("./ImagesSortie/" + nomImage + ".bmp");
+            //    pictureBox1.Image = Image.FromFile("./ImagesSortie/" + nomImage + ".bmp");
+            //}
         }
 
-        
     }
 }
